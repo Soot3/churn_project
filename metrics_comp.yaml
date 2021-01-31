@@ -1,0 +1,39 @@
+name: Get model metrics
+inputs:
+- {name: data_path}
+implementation:
+  container:
+    image: python:3.7
+    command:
+    - sh
+    - -c
+    - (PIP_DISABLE_PIP_VERSION_CHECK=1 python3 -m pip install --quiet --no-warn-script-location
+      'pandas==0.23.4' 'scikit-learn==0.22' 'numpy' || PIP_DISABLE_PIP_VERSION_CHECK=1
+      python3 -m pip install --quiet --no-warn-script-location 'pandas==0.23.4' 'scikit-learn==0.22'
+      'numpy' --user) && "$0" "$@"
+    - sh
+    - -ec
+    - |
+      program_path=$(mktemp)
+      echo -n "$0" > "$program_path"
+      python3 -u "$program_path" "$@"
+    - "def get_model_metrics(data_path):\n    import sys, subprocess\n    subprocess.run([sys.executable,\
+      \ \"-m\", \"pip\", \"install\", \"scikit-learn==0.22\"])\n    subprocess.run([sys.executable,\
+      \ \"-m\", \"pip\", \"install\", \"numpy\"])\n    subprocess.run([sys.executable,\
+      \ \"-m\", \"pip\", \"install\", \"pandas\"])\n    import numpy as np\n    import\
+      \ pandas as pd\n    import pickle\n    from sklearn.ensemble import RandomForestClassifier\n\
+      \    with open(f'{data_path}/split_data','rb') as f:\n        data = pickle.load(f)\n\
+      \    with open(f'{data_path}/fit_model','rb') as f:\n        rfcla = pickle.load(f)\n\
+      \    Y_pred = rfcla.predict(data[\"test\"][\"X\"])\n    score = rfcla.score(data[\"\
+      test\"][\"X\"], data[\"test\"][\"y\"])\n\n    metrics = {\"score\":score}\n\
+      \    with open(f'{data_path}/results.txt','w') as result:\n        result.write(f'Summary:\
+      \ {metrics}')\n\n    if __name__ == '__main__':\n      kfp.components.create_component_from_func(get_model_metrics)\n\
+      \      output_component_file = 'metrics_comp.yaml'\n      base_image = 'python:3.7'\n\
+      \      packages_to_install = ['pandas==0.23.4','scikit-learn==0.22','numpy']\
+      \  \n    return (print(\"Done!\"))\n\nimport argparse\n_parser = argparse.ArgumentParser(prog='Get\
+      \ model metrics', description='')\n_parser.add_argument(\"--data-path\", dest=\"\
+      data_path\", type=str, required=True, default=argparse.SUPPRESS)\n_parsed_args\
+      \ = vars(_parser.parse_args())\n\n_outputs = get_model_metrics(**_parsed_args)\n"
+    args:
+    - --data-path
+    - {inputValue: data_path}
