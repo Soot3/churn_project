@@ -1,0 +1,27 @@
+name: Train model
+inputs:
+- {name: clean_data}
+implementation:
+  container:
+    image: python:3.7
+    command:
+    - sh
+    - -ec
+    - |
+      program_path=$(mktemp)
+      echo -n "$0" > "$program_path"
+      python3 -u "$program_path" "$@"
+    - "def train_model(clean_data):\n  import sys, subprocess\n  subprocess.run([sys.executable,\
+      \ \"-m\", \"pip\", \"install\", \"scikit-learn==0.22\"])\n  subprocess.run([sys.executable,\
+      \ \"-m\", \"pip\", \"install\", \"numpy\"])\n  subprocess.run([sys.executable,\
+      \ \"-m\", \"pip\", \"install\", \"pandas\"])\n  import joblib\n  import numpy\
+      \ as np\n  import pandas as pd  \n  from sklearn.ensemble import RandomForestClassifier\n\
+      \  data = joblib.load(clean_data)\n  rfcla = RandomForestClassifier(n_estimators=78,random_state=9,n_jobs=27,max_features=\
+      \ 'auto')\n  rfcla.fit(data[\"train\"][\"X\"], data[\"train\"][\"y\"])\n  joblib.dump(rfcla,'fit_model')\n\
+      \nimport argparse\n_parser = argparse.ArgumentParser(prog='Train model', description='')\n\
+      _parser.add_argument(\"--clean-data\", dest=\"clean_data\", type=str, required=True,\
+      \ default=argparse.SUPPRESS)\n_parsed_args = vars(_parser.parse_args())\n\n\
+      _outputs = train_model(**_parsed_args)\n"
+    args:
+    - --clean-data
+    - {inputValue: clean_data}

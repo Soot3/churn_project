@@ -1,0 +1,46 @@
+name: Test model
+inputs:
+- {name: clean_data}
+- {name: fit_model}
+implementation:
+  container:
+    image: python:3.7
+    command:
+    - sh
+    - -ec
+    - |
+      program_path=$(mktemp)
+      echo -n "$0" > "$program_path"
+      python3 -u "$program_path" "$@"
+    - |
+      def test_model(clean_data, fit_model):
+        import sys, subprocess
+        subprocess.run([sys.executable, "-m", "pip", "install", "scikit-learn==0.22"])
+        subprocess.run([sys.executable, "-m", "pip", "install", "numpy"])
+        subprocess.run([sys.executable, "-m", "pip", "install", "pandas"])
+        import numpy as np
+        import pandas as pd
+        import joblib
+        from sklearn.ensemble import RandomForestClassifier
+        from sklearn.metrics import confusion_matrix,classification_report
+        rfcla = joblib.load(fit_model)
+        data = joblib.load(clean_data)
+        Y_pred = rfcla.predict(data["test"]["X"])
+        score = rfcla.score(data["test"]["X"], data["test"]["y"])
+        rfcla_cm = confusion_matrix(data["test"]["y"], Y_pred)
+        cr = classification_report(data["test"]["y"], Y_pred, target_names=['No', 'Yes'])
+        data = {"score":score, "cm":rfcla_cm,"cr":cr}
+        joblib.dump(data,'metrics')
+
+      import argparse
+      _parser = argparse.ArgumentParser(prog='Test model', description='')
+      _parser.add_argument("--clean-data", dest="clean_data", type=str, required=True, default=argparse.SUPPRESS)
+      _parser.add_argument("--fit-model", dest="fit_model", type=str, required=True, default=argparse.SUPPRESS)
+      _parsed_args = vars(_parser.parse_args())
+
+      _outputs = test_model(**_parsed_args)
+    args:
+    - --clean-data
+    - {inputValue: clean_data}
+    - --fit-model
+    - {inputValue: fit_model}
