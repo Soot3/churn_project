@@ -13,9 +13,11 @@ implementation:
       python3 -u "$program_path" "$@"
     - |
       def results(metrics):
+        import sys, subprocess
+        subprocess.run([sys.executable, "-m", "pip", "install", "joblib"])
         import joblib
         data=joblib.load(metrics)
-        print(f" Accuracy: {data['score']} \n")
+        print(f" Accuracy: {data['score']} \n ")
         print(f"Confusion: {data['cm']} \n")
         print(f"Classification report: {data['cr']} \n")
         with open('results.txt','w') as result:

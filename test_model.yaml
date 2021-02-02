@@ -18,6 +18,7 @@ implementation:
         subprocess.run([sys.executable, "-m", "pip", "install", "scikit-learn==0.22"])
         subprocess.run([sys.executable, "-m", "pip", "install", "numpy"])
         subprocess.run([sys.executable, "-m", "pip", "install", "pandas"])
+        subprocess.run([sys.executable, "-m", "pip", "install", "joblib"])
         import numpy as np
         import pandas as pd
         import joblib
